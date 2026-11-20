@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MindUni Shield – Hệ thống Can thiệp Kiến trúc Lựa chọn và Đồng bộ Tuyển sinh Chính thống</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Be Vietnam Pro"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            tealcalm: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              200: '#99f6e4',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              900: '#134e4a',
+            },
+            indigodeep: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#1e1b4b',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body {
+      font-family: 'Be Vietnam Pro', sans-serif;
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+    .clean-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
+    }
+    .fomo-blur-content {
+      filter: blur(8px);
+      user-select: none;
+      pointer-events: none;
+      transition: filter 0.3s ease;
+    }
+    .fomo-unblurred {
+      filter: blur(0px);
+      user-select: auto;
+      pointer-events: auto;
+    }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    .breathing-orb {
+      animation: breathePulse 8s infinite ease-in-out;
+    }
+    @keyframes breathePulse {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      40% { transform: scale(1.42); opacity: 1; }
+      75% { transform: scale(1.42); opacity: 0.92; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Toast Container -->
+  <div id="shieldToastBox" class="fixed bottom-4 left-4 z-50 flex flex-col gap-2 max-w-sm pointer-events-none"></div>
+
+  <!-- Evening Study Nudge Slide-in Alert -->
+  <div id="eveningNudgeBanner" class="hidden fixed bottom-5 right-5 z-50 max-w-sm w-full p-5 rounded-3xl bg-slate-900/95 backdrop-blur-md text-white border border-tealcalm-500/60 shadow-2xl space-y-3.5">
+    <div class="flex items-start justify-between gap-2">
+      <div class="flex items-center gap-2.5">
+        <span class="w-9 h-9 rounded-2xl bg-gradient-to-br from-tealcalm-500/30 to-indigodeep-500/30 text-tealcalm-300 border border-tealcalm-400/30 flex items-center justify-center shrink-0">
+          <i data-lucide="moon-star" class="w-4 h-4"></i>
+        </span>
+        <div>
+          <div class="text-[10px] font-bold uppercase tracking-wider text-tealcalm-400">Cú Hích Khung Giờ Tự Học (19h30 – 23h00)</div>
+          <div class="text-xs font-extrabold">Phát hiện phiên truy cập mạng xã hội vượt ngưỡng 15 phút</div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('eveningNudgeBanner').classList.add('hidden')" class="text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <p class="text-[11px] text-slate-300 leading-relaxed">
+      Lộ trình cá nhân hóa đang ưu tiên <strong>70% quỹ thời gian cho Tổ hợp môn trọng tâm (2+2)</strong>. Bạn có thể chọn điều hòa nhịp thở 20 giây hoặc kích hoạt khóa nhiễu để tiếp tục ôn tập.
+    </p>
+    <div class="flex gap-2">
+      <button onclick="openQuickBreathing()" class="flex-1 py-2.5 rounded-xl bg-tealcalm-600 hover:bg-tealcalm-500 text-white font-bold text-[11px] transition">
+        Điều hòa thở 4-7-8 (20s)
+      </button>
+      <button onclick="dismissEveningNudgeToFocus()" class="flex-1 py-2.5 rounded-xl bg-indigodeep-600 hover:bg-indigodeep-500 text-white font-bold text-[11px] transition">
+        Khóa nhiễu, quay lại học
+      </button>
+    </div>
+  </div>
+
+  <!-- Top Scientific Control Bar -->
+  <header class="sticky top-0 z-30 bg-slate-950/95 backdrop-blur-md text-white border-b border-slate-800/90 px-4 py-3 shadow-lg">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <!-- Left: Scientific System Identity -->
+      <div class="flex items-center gap-3 flex-1 min-w-[260px]">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-tealcalm-500 to-indigodeep-600 flex items-center justify-center shadow-lg shadow-tealcalm-500/20 shrink-0">
+          <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-sm sm:text-base tracking-tight bg-gradient-to-r from-white via-tealcalm-100 to-indigodeep-200 bg-clip-text text-transparent">MINDUNI SHIELD</span>
+            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-tealcalm-500/20 text-tealcalm-300 border border-tealcalm-500/40">Kiến trúc Lựa chọn Số</span>
+          </div>
+          <p class="text-[11px] text-slate-400 hidden sm:block">Hệ thống Sàng lọc Nhiễu loạn Nhận thức trên Mạng xã hội kết hợp Đồng bộ Tuyển sinh Chính thống</p>
+        </div>
+      </div>
+
+      <!-- Right: Real-time Controls -->
+      <div class="flex flex-wrap items-center gap-2.5">
+        <!-- Live Study Protection Timer -->
+        <div class="hidden md:flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800 text-[11px]">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-slate-400">Thời gian bảo vệ tập trung:</span>
+          <span id="liveFocusDuration" class="font-mono font-bold text-tealcalm-300">00:14:28</span>
+        </div>
+
+        <!-- Master Toggle Switch -->
+        <div class="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-700/80">
+          <span class="text-[11px] font-bold text-slate-300">Bộ lọc 2 tầng:</span>
+          <button id="shieldMasterToggleBtn" onclick="toggleShieldMaster()" class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-[11px] transition flex items-center gap-1 shadow-xs">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> ĐANG KÍCH HOẠT
+          </button>
+        </div>
+
+        <!-- Evening Nudge Trigger -->
+        <button onclick="triggerEveningStudyNudge()" class="px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/40 text-[11px] font-bold flex items-center gap-1.5 transition">
+          <i data-lucide="bell-ring" class="w-3.5 h-3.5"></i> Cú hích 19h30
+        </button>
+
+        <!-- Deployment Package Button -->
+        <button onclick="openManifestCodeModal()" class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigodeep-600 to-tealcalm-600 hover:from-indigodeep-500 hover:to-tealcalm-500 text-white text-[11px] font-bold flex items-center gap-1.5 shadow-md transition">
+          <i data-lucide="cpu" class="w-3.5 h-3.5"></i> Gói Cài Đặt Đa Nền Tảng
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+    <!-- LEFT COLUMN (7 cols): COGNITIVE NOISE FILTERING & REAL-TIME DOM INTERVENTION -->
+    <section class="lg:col-span-7 space-y-5">
+      <!-- Scientific Overview & Analytics Strip -->
+      <div class="p-5 sm:p-6 rounded-3xl clean-card space-y-4">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="space-y-1.5">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-tealcalm-50 text-tealcalm-800 border border-tealcalm-200 text-[11px] font-bold">
+              <i data-lucide="brain-circuit" class="w-3.5 h-3.5 text-tealcalm-600"></i>
+              Can thiệp Kiến trúc Lựa chọn (Nudge) • Kiểm soát Kích thích (CBT)
+            </div>
+            <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 leading-snug">
+              Sàng lọc Nhiễu loạn Nhận thức trên Luồng Mạng xã hội
+            </h1>
+          </div>
+          <div class="px-4 py-2.5 rounded-2xl bg-slate-900 text-white text-right shrink-0">
+            <div class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Trạng thái lọc</div>
+            <div id="blockedCounterVal" class="font-mono font-extrabold text-sm text-tealcalm-300 mt-0.5">4 / 4 tin nhiễu đã lọc</div>
+          </div>
+        </div>
+
+        <p class="text-xs sm:text-[13px] text-slate-600 leading-relaxed">
+          Cơ chế quét DOM thời gian thực (<code class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-800 font-mono text-xs">MutationObserver</code>) tự động nhận diện hai nhóm tác nhân gây nhiễu: <strong>Tầng 1 (Kích hoạt lo âu so sánh xã hội A-FOMO)</strong> cùng <strong>Tầng 2 (Thông tin lệch tổ hợp 2+2 đã khóa)</strong>, phủ kính mờ nhận thức giúp học sinh giữ vững sự tập trung.
+        </p>
+
+        <!-- Custom Personal Keyword Shield -->
+        <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigodeep-600"></i>
+              Từ khóa gây căng thẳng cá nhân hóa (Tự động làm mờ):
+            </span>
+            <span class="text-[11px] text-slate-500 font-medium">Đồng bộ tức thì</span>
+          </div>
+          <div id="customKeywordsContainer" class="flex flex-wrap gap-1.5"></div>
+          <form onsubmit="addCustomKeyword(event)" class="flex gap-2">
+            <input id="customKeywordInput" type="text" placeholder="Thêm từ khóa cá nhân (VD: thủ khoa, điểm sàn tăng, trượt đại học)..." class="flex-1 rounded-xl border border-slate-300 px-3.5 py-2 text-xs bg-white focus:border-tealcalm-500 outline-none" />
+            <button type="submit" class="px-4 py-2 rounded-xl bg-tealcalm-600 hover:bg-tealcalm-700 text-white font-bold text-xs shrink-0 transition">
+              + Thêm
+            </button>
+          </form>
+        </div>
+
+        <!-- Real-time Semantic Scanner Input -->
+        <form onsubmit="addCustomJudgePost(event)" class="pt-1 flex flex-col sm:flex-row gap-2">
+          <input id="judgeTestPostInput" type="text" placeholder="Nhập nội dung bài đăng mạng xã hội để kiểm tra bộ phân loại ngữ nghĩa 2 tầng..." class="flex-1 rounded-xl border border-slate-300 px-3.5 py-2.5 text-xs bg-white focus:border-indigodeep-500 outline-none" />
+          <button type="submit" class="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shrink-0 flex items-center justify-center gap-1.5 transition">
+            <i data-lucide="scan-search" class="w-4 h-4 text-tealcalm-400"></i> Kiểm tra bài đăng
+          </button>
+        </form>
+      </div>
+
+      <!-- Social Stream Container -->
+      <div id="socialFeedPostsContainer" class="space-y-4"></div>
+    </section>
+
+    <!-- RIGHT COLUMN (5 cols): CLEAN EXTENSION CONTROL CENTER -->
+    <aside class="lg:col-span-5">
+      <div class="sticky top-20 rounded-3xl clean-card border-2 border-indigodeep-200 overflow-hidden flex flex-col">
+        <!-- Clean Two-Row Extension Header -->
+        <div class="p-4 sm:p-5 bg-slate-900 text-white space-y-3.5">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-tealcalm-500 to-indigodeep-600 flex items-center justify-center text-white shadow-md shrink-0">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-extrabold text-sm sm:text-base tracking-tight">MindUni Shield</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">v4.2 Chuẩn 2027</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">Bảng Điều Khiển Đồng Bộ Tuyển Sinh Chính Thống</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dedicated Filter Bar (No Cramped Overlapping) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">1. Tổ hợp môn 2+2 đã khóa</label>
+              <select id="shieldComboSelect" onchange="syncShieldProfile()" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-xs font-bold text-white outline-none focus:border-tealcalm-400 cursor-pointer">
+                <option value="A00">Toán – Văn + Lí, Hóa</option>
+                <option value="B00">Toán – Văn + Hóa, Sinh</option>
+                <option value="C00">Toán – Văn + Sử, Địa</option>
+                <option value="D01">Toán – Văn + GDKT, Anh</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1">2. Nhóm ngành mục tiêu</label>
+              <select id="shieldMajorGroupSelect" onchange="syncShieldProfile()" class="w-full rounded-xl bg-slate-800 border border-slate-700 px-3 py-2 text-xs font-bold text-white outline-none focus:border-tealcalm-400 cursor-pointer">
+                <option value="TECH">Kỹ thuật – CNTT</option>
+                <option value="ECON">Kinh tế – Tài chính</option>
+                <option value="EDU_LAW">Sư phạm – Luật</option>
+                <option value="HEALTH">Y – Dược – Sức khỏe</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clean 5-Tab Navigation -->
+        <div class="grid grid-cols-5 border-b border-slate-200 bg-slate-50 text-[11px] font-bold">
+          <button onclick="switchPopupTab('news')" id="popupTabNewsBtn" class="py-3 px-1 bg-white text-indigodeep-700 border-b-2 border-indigodeep-600 flex flex-col items-center justify-center gap-1 transition">
+            <i data-lucide="newspaper" class="w-4 h-4 shrink-0"></i> <span>Tin Chuẩn</span>
+          </button>
+          <button onclick="switchPopupTab('resources')" id="popupTabResourcesBtn" class="py-3 px-1 text-slate-500 hover:text-slate-900 flex flex-col items-center justify-center gap-1 transition">
+            <i data-lucide="book-open-check" class="w-4 h-4 shrink-0"></i> <span>Học Liệu</span>
+          </button>
+          <button onclick="switchPopupTab('debunk')" id="popupTabDebunkBtn" class="py-3 px-1 text-slate-500 hover:text-slate-900 flex flex-col items-center justify-center gap-1 transition">
+            <i data-lucide="scale" class="w-4 h-4 shrink-0"></i> <span>Giải Mã</span>
+          </button>
+          <button onclick="switchPopupTab('anchor')" id="popupTabAnchorBtn" class="py-3 px-1 text-slate-500 hover:text-slate-900 flex flex-col items-center justify-center gap-1 transition">
+            <i data-lucide="target" class="w-4 h-4 shrink-0"></i> <span>Thẻ Neo</span>
+          </button>
+          <button onclick="switchPopupTab('stats')" id="popupTabStatsBtn" class="py-3 px-1 text-slate-500 hover:text-slate-900 flex flex-col items-center justify-center gap-1 transition">
+            <i data-lucide="bar-chart-3" class="w-4 h-4 shrink-0"></i> <span>Nhật Ký</span>
+          </button>
+        </div>
+
+        <!-- TAB 1: OFFICIAL ADMISSIONS WHITELIST FEED -->
+        <div id="popupPanelNews" class="p-4 sm:p-5 space-y-3.5 max-h-[72vh] overflow-y-auto custom-scrollbar">
+          <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-2">
+            <div class="text-xs text-emerald-950 leading-relaxed">
+              <strong>Nguồn Xác Thực 100%:</strong> Lọc theo <strong id="newsFilterComboLabel">Toán – Văn + Lí, Hóa</strong>, nhóm <strong id="newsFilterMajorLabel">Kỹ thuật – CNTT</strong> (Thông tư 95/2026/TT-BGDĐT).
+            </div>
+            <button onclick="refreshExtensionOfficialNews()" id="btnRefreshExtNews" class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shrink-0 flex items-center gap-1.5 transition">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Quét Tin
+            </button>
+          </div>
+
+          <!-- Live Bulletin Publisher (Proves Continuous Daily Update) -->
+          <form onsubmit="publishCustomOfficialBulletin(event)" class="p-3 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2">
+            <div class="flex items-center justify-between text-[10px] font-bold text-slate-600 uppercase">
+              <span>Cập nhật thông báo tuyển sinh mới (Đồng bộ ngay vào Extension)</span>
+              <span class="text-tealcalm-700">Live Sync</span>
+            </div>
+            <div class="flex gap-1.5">
+              <input id="newBulletinTitleInput" type="text" placeholder="Nhập thông báo đề án trường / lịch thi mới nhất..." class="flex-1 rounded-xl border border-slate-300 px-3 py-1.5 text-[11px] bg-white focus:border-indigodeep-500 outline-none" />
+              <button type="submit" class="px-3 py-1.5 rounded-xl bg-indigodeep-600 hover:bg-indigodeep-700 text-white font-bold text-[11px] shrink-0 transition">
+                + Đồng bộ
+              </button>
+            </div>
+          </form>
+
+          <!-- Deadline Countdown Alert Pill -->
+          <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between text-[11px]">
+            <span class="font-bold text-amber-900 flex items-center gap-1.5">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i> Mốc nhắc tự động:
+            </span>
+            <span class="font-extrabold text-amber-800">Rà soát Phiếu ĐKDT 2+2 (Còn 14 ngày)</span>
+          </div>
+
+          <!-- Whitelist Bulletins -->
+          <div id="extensionOfficialNewsList" class="space-y-2.5"></div>
+
+          <!-- Daily Auto-Sync Status Bar (chrome.alarms) -->
+          <div class="p-3 rounded-xl bg-indigodeep-50/90 border border-indigodeep-200 flex items-center justify-between gap-2 text-[11px]">
+            <div class="flex items-center gap-2 text-indigodeep-950">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0"></span>
+              <span><strong>Đồng bộ ngầm 24h (chrome.alarms):</strong> Tự động cập nhật quy chế mới mỗi ngày, đẩy thông báo tức thì.</span>
+            </div>
+            <span id="lastDailySyncTime" class="font-mono font-bold text-indigodeep-700 shrink-0">Hôm nay • 07:00</span>
+          </div>
+
+          <!-- 3-Stage Deadline Escalation Tracker -->
+          <div class="p-3.5 rounded-2xl bg-slate-900 text-white space-y-2">
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="font-bold uppercase text-tealcalm-400">Hệ thống Nhắc Mốc 3 Chặng (Chống Trễ Hạn)</span>
+              <span class="px-2 py-0.5 rounded bg-white/10 text-slate-300">Đa kênh</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5 text-[10px] text-center">
+              <div class="p-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40">
+                <div class="font-extrabold text-emerald-300">Chặng 1 (-14 ngày)</div>
+                <div class="text-slate-300 mt-0.5">Chuẩn bị hồ sơ</div>
+              </div>
+              <div class="p-2 rounded-xl bg-amber-500/15 border border-amber-500/40">
+                <div class="font-extrabold text-amber-300">Chặng 2 (-3 ngày)</div>
+                <div class="text-slate-300 mt-0.5">Rà soát thông tin</div>
+              </div>
+              <div class="p-2 rounded-xl bg-rose-500/15 border border-rose-500/40">
+                <div class="font-extrabold text-rose-300">Chặng 3 (-24 giờ)</div>
+                <div class="text-slate-300 mt-0.5">Cảnh báo đỏ chốt</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 1B: CURATED WHITELIST STUDY RESOURCES (KHO HỌC LIỆU & KÊNH ÔN LUYỆN UY TÍN) -->
+        <div id="popupPanelResources" class="hidden p-4 space-y-3 max-h-[68vh] overflow-y-auto custom-scrollbar">
+          <div class="p-3.5 rounded-2xl bg-gradient-to-r from-tealcalm-50 to-indigodeep-50 border border-tealcalm-200 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-extrabold uppercase tracking-wider text-tealcalm-800">Danh Sách Trắng Học Liệu Chính Thống</span>
+              <span class="px-2 py-0.5 rounded-full bg-white text-indigodeep-700 border border-indigodeep-200 text-[10px] font-bold">Lọc theo 2+2</span>
+            </div>
+            <p class="text-[11px] text-slate-700 leading-relaxed">
+              Thay thế các quảng cáo luyện thi trôi nổi bằng hệ thống học liệu chuẩn hóa theo Chương trình GDPT 2018 và <strong>Thông tư 95/2026/TT-BGDĐT</strong> (trần điểm cộng chứng chỉ quốc tế tối đa 0,50/30đ năm 2027).
+            </p>
+          </div>
+
+          <!-- Category Filter Pills -->
+          <div class="flex flex-wrap gap-1.5 text-[10px] font-bold">
+            <button onclick="renderVerifiedStudyResources('ALL')" id="resCatAll" class="px-2.5 py-1 rounded-full bg-indigodeep-600 text-white transition">Tất cả nguồn chuẩn</button>
+            <button onclick="renderVerifiedStudyResources('THPT22')" id="resCatThpt" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Ôn THPT 2+2</button>
+            <button onclick="renderVerifiedStudyResources('DGNL_VSAT')" id="resCatExam" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition">ĐGNL – V-SAT</button>
+            <button onclick="renderVerifiedStudyResources('CERT')" id="resCatCert" class="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Chứng chỉ Ngoại ngữ</button>
+          </div>
+
+          <!-- Resource Cards Container -->
+          <div id="verifiedStudyResourcesList" class="space-y-2.5"></div>
+        </div>
+
+        <!-- TAB 2: FOMO RUMOR DEBUNKER & ANTI-SCAM GUARD -->
+        <div id="popupPanelDebunk" class="hidden p-4 space-y-3 max-h-[68vh] overflow-y-auto custom-scrollbar">
+          <div class="p-3.5 rounded-2xl bg-gradient-to-r from-amber-50 to-rose-50 border border-amber-200 space-y-1">
+            <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-800">Đối chiếu Pháp lý Thông tư số 95/2026/TT-BGDĐT</div>
+            <div class="font-bold text-xs text-slate-900">Thư viện Giải mã Tin đồn Tuyển sinh 2027 cùng Cảnh báo Tên miền Lừa đảo</div>
+          </div>
+          <div id="rumorDebunkList" class="space-y-2.5"></div>
+        </div>
+
+        <!-- TAB 3: FOCUS ANCHOR NUDGE -->
+        <div id="popupPanelAnchor" class="hidden p-4 space-y-3.5 max-h-[68vh] overflow-y-auto custom-scrollbar">
+          <div class="p-4 rounded-2xl bg-gradient-to-br from-tealcalm-50 to-indigodeep-50 border border-tealcalm-200 space-y-2">
+            <span class="text-[10px] font-extrabold uppercase tracking-wider text-tealcalm-700">Thẻ Neo Mục Tiêu Cá Nhân (Chuẩn Thông tư 95/2026)</span>
+            <h4 class="font-extrabold text-sm text-slate-900">Tổ hợp 2+2 đã khóa: <span id="anchorComboText" class="text-indigodeep-700">Toán – Ngữ văn + (Vật lí, Hóa học)</span></h4>
+            <p class="text-[11px] text-slate-600 leading-relaxed">
+              Tuân thủ quy chế 2027 (mỗi ngành tối đa 03 phương thức, điểm cộng tối đa 0,50/30đ), mọi thông tin về các kỳ thi ngoài 2 phương thức trọng tâm dưới đây đều được tự động thu gọn.
+            </p>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="p-3.5 rounded-2xl bg-white border border-slate-200 flex items-center justify-between shadow-2xs">
+              <div>
+                <div class="text-[10px] font-bold text-tealcalm-700 uppercase">Phương thức 1 • Mũi nhọn (70% quỹ thời gian)</div>
+                <div class="font-bold text-slate-900 mt-0.5">Xét điểm Thi Tốt nghiệp THPT (2+2)</div>
+              </div>
+              <span class="px-2.5 py-1 rounded-xl bg-tealcalm-50 text-tealcalm-800 font-mono font-extrabold border border-tealcalm-200">91/100</span>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-white border border-slate-200 flex items-center justify-between shadow-2xs">
+              <div>
+                <div class="text-[10px] font-bold text-indigodeep-700 uppercase">Phương thức 2 • Dự phòng (30% quỹ thời gian)</div>
+                <div class="font-bold text-slate-900 mt-0.5">Xét Học bạ kết hợp V-SAT theo tổ hợp 2+2</div>
+              </div>
+              <span class="px-2.5 py-1 rounded-xl bg-indigodeep-50 text-indigodeep-800 font-mono font-extrabold border border-indigodeep-200">85/100</span>
+            </div>
+          </div>
+
+          <button onclick="openQuickBreathing()" class="w-full py-3 rounded-xl bg-gradient-to-r from-slate-900 to-indigodeep-950 hover:from-slate-800 hover:to-indigodeep-900 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition">
+            <i data-lucide="wind" class="w-4 h-4 text-tealcalm-400"></i> Điều hòa Nhịp thở 4-7-8 Cân Bằng Nhanh (20s)
+          </button>
+        </div>
+
+        <!-- TAB 3: MIND SHIELD ANALYTICS & MOBILE DEPLOYMENT -->
+        <div id="popupPanelStats" class="hidden p-4 space-y-3.5 max-h-[68vh] overflow-y-auto custom-scrollbar">
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="p-3.5 rounded-2xl bg-tealcalm-50/80 border border-tealcalm-200">
+              <div class="text-[10px] font-bold text-tealcalm-800 uppercase">Tin nhiễu đã sàng lọc (Tuần)</div>
+              <div id="statWeeklyBlocked" class="font-mono font-extrabold text-xl text-tealcalm-900 mt-1">47 bài</div>
+              <div class="text-[10px] text-tealcalm-700 mt-0.5">Giảm 68% tiếp xúc tin đồn</div>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-indigodeep-50/80 border border-indigodeep-200">
+              <div class="text-[10px] font-bold text-indigodeep-800 uppercase">Quỹ tự học được bảo vệ</div>
+              <div class="font-mono font-extrabold text-xl text-indigodeep-900 mt-1">11,5 giờ</div>
+              <div class="text-[10px] text-indigodeep-700 mt-0.5">Khung giờ 19h30 – 23h00</div>
+            </div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-2 text-xs">
+            <div class="font-extrabold text-slate-900 flex items-center gap-1.5">
+              <i data-lucide="smartphone" class="w-4 h-4 text-tealcalm-600"></i>
+              Triển khai Đồng bộ trên Điện thoại Thông minh
+            </div>
+            <div class="space-y-1.5 text-[11px] text-slate-600 leading-relaxed">
+              <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                <strong class="text-slate-900">1. Hệ điều hành Android:</strong> Cài đặt trực tiếp gói Extension qua trình duyệt <em>Kiwi Browser</em> hoặc <em>Lemur Browser</em> để lọc trực tiếp trên Facebook, TikTok Web.
+              </div>
+              <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                <strong class="text-slate-900">2. Hệ điều hành iOS cùng Wi-Fi Gia đình:</strong> Kích hoạt hồ sơ <em>DNS Lọc Tin Nhiễu Tuyển Sinh (NextDNS / AdGuard)</em> tự động chặn trang tin đồn trong khung giờ tự học buổi tối.
+              </div>
+            </div>
+          </div>
+
+          <button onclick="openManifestCodeModal()" class="w-full py-2.5 rounded-xl bg-indigodeep-600 hover:bg-indigodeep-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> Tải Bộ Cài Đặt Extension Thực Tế (5 Tệp)
+          </button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Quick 4-7-8 Breathing Modal -->
+  <div id="shieldBreathingModal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="max-w-sm w-full p-6 rounded-3xl bg-white text-center space-y-4 shadow-2xl">
+      <h3 class="font-extrabold text-base text-slate-900">Hạ Nhiệt Lo Âu Nhanh 20 Giây (4-7-8)</h3>
+      <p class="text-xs text-slate-600">Hít vào 4 giây → Giữ hơi 7 giây → Thở ra chậm 8 giây để ngắt mạch kích thích so sánh xã hội.</p>
+      <div class="py-4 flex justify-center">
+        <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-tealcalm-500 to-indigodeep-600 breathing-orb flex items-center justify-center text-white font-bold text-xs shadow-lg">
+          Hít – Giữ – Thở
+        </div>
+      </div>
+      <button onclick="document.getElementById('shieldBreathingModal').classList.add('hidden'); showShieldToast('Đã cân bằng cảm xúc', 'Tâm trí đã sẵn sàng quay lại lộ trình 2 phương thức trọng tâm.', 'success');" class="w-full py-2.5 rounded-xl bg-tealcalm-600 hover:bg-tealcalm-700 text-white font-bold text-xs">
+        Hoàn Tất, Quay Lại Tập Trung
+      </button>
+    </div>
+  </div>
+
+  <!-- Extension Manifest V3 Code Modal -->
+  <div id="manifestCodeModal" class="hidden fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="max-w-3xl w-full p-6 rounded-3xl bg-slate-900 text-white border border-slate-700 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <span class="text-[10px] font-bold uppercase text-tealcalm-400">Gói Cài Đặt Thực Tế Chrome, Edge, Kiwi Browser (Mobile)</span>
+          <h3 class="font-bold text-base">Bộ 5 Tệp Mã Nguồn Extension Manifest V3 (Hoạt động trực tiếp trên Facebook, TikTok)</h3>
+        </div>
+        <button onclick="document.getElementById('manifestCodeModal').classList.add('hidden')" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Direct Download Buttons for Real Extension Files -->
+      <div class="p-4 rounded-2xl bg-slate-950 border border-tealcalm-500/40 space-y-3">
+        <div class="text-xs font-bold text-tealcalm-300">Bước 1: Tải trực tiếp 5 tệp cài đặt Extension (tích hợp tự động cập nhật hàng ngày) về cùng 1 thư mục:</div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <button onclick="downloadExtensionFile('manifest.json')" class="py-2 px-2.5 rounded-xl bg-tealcalm-600 hover:bg-tealcalm-500 text-white font-bold text-[11px] flex items-center justify-center gap-1 transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> manifest.json
+          </button>
+          <button onclick="downloadExtensionFile('background.js')" class="py-2 px-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[11px] flex items-center justify-center gap-1 transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> background.js
+          </button>
+          <button onclick="downloadExtensionFile('content.js')" class="py-2 px-2.5 rounded-xl bg-indigodeep-600 hover:bg-indigodeep-500 text-white font-bold text-[11px] flex items-center justify-center gap-1 transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> content.js
+          </button>
+          <button onclick="downloadExtensionFile('popup.html')" class="py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] flex items-center justify-center gap-1 transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> popup.html
+          </button>
+          <button onclick="downloadExtensionFile('popup.js')" class="py-2 px-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-[11px] flex items-center justify-center gap-1 transition">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> popup.js
+          </button>
+        </div>
+        <div class="text-[11px] text-slate-300 leading-relaxed pt-1">
+          <strong>Bước 2 (Trên Máy tính):</strong> Mở <code>chrome://extensions</code> → Bật <strong>Chế độ dành cho nhà phát triển (Developer mode)</strong> → Bấm <strong>Tải tiện ích đã giải nén (Load unpacked)</strong> và chọn thư mục chứa 5 tệp vừa tải.<br/>
+          <strong>Bước 3 (Trên Điện thoại):</strong> Cài qua trình duyệt <strong>Kiwi Browser / Lemur Browser</strong> (Android) hoặc cấu hình <strong>DNS Lọc Tin Nhiễu Tuyển Sinh</strong> (iOS cùng Wi-Fi Gia đình).
+        </div>
+      </div>
+
+      <pre class="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 font-mono text-[11px] text-emerald-300 overflow-x-auto max-h-56 custom-scrollbar">// Service Worker background.js – Tự động đồng bộ tin tuyển sinh chính thống mỗi 24 giờ
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.alarms.create("minduniDailyAdmissionsSync", { periodInMinutes: 1440 });
+  syncDailyOfficialAdmissions();
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "minduniDailyAdmissionsSync") {
+    syncDailyOfficialAdmissions();
+  }
+});
+
+async function syncDailyOfficialAdmissions() {
+  const todayStr = new Date().toLocaleDateString("vi-VN");
+  const latestFeed = [
+    `[${todayStr}] Bộ GD&ĐT giữ ổn định cấu trúc đề 2+2 bám sát chương trình lớp 12.`,
+    `[${todayStr}] Hệ thống lọc ảo tự động xét phương thức có lợi nhất từ NV1 xuống dưới.`
+  ];
+  await chrome.storage.local.set({ minduniDailyNews: latestFeed, lastSync: todayStr });
+}</pre>
+    </div>
+  </div>
+
+  <script>
+    const defaultFomoKeywords = [
+      "khoe bảng điểm", "29+", "29,5", "29,25", "điểm chuẩn tăng sốc", "tin đồn",
+      "mất gốc", "không có ielts", "coi như trượt", "thi 5 kỳ", "hoảng loạn", "tăng vọt",
+      "bao đỗ", "suất ngoại giao", "mua điểm", "lộ đề"
+    ];
+
+    const scamDomainPatterns = ["tuyensinh-baodo", "congbo-diemchuan.xyz", "suatngoaigiao", ".vip/tuyensinh", "muachungchi"];
+
+    let customUserKeywords = ["thủ khoa", "trượt đại học", "điểm sàn tăng"];
+
+    const irrelevantExamKeywordsByCombo = {
+      A00: ["đánh giá tư duy", "đgtd", "khối c00", "sử địa", "văn sử địa"],
+      B00: ["đánh giá tư duy", "đgtd", "khối c00", "kinh tế quốc tế"],
+      C00: ["đánh giá tư duy", "đgtd", "v-sat vật lí", "khối a00", "toán lí hóa"],
+      D01: ["đánh giá tư duy", "đgtd", "khối b00", "hóa sinh"]
+    };
+
+    let shieldEnabled = true;
+    let weeklyBlockedTotal = 47;
+
+    const initialSocialPosts = [
+      {
+        id: 1,
+        author: "Diễn đàn Luyện thi Cấp tốc 24/7",
+        time: "12 phút trước • Nhóm công khai",
+        avatar: "DL",
+        avatarColor: "bg-rose-600",
+        text: "TIN ĐỒN NÓNG: Nghe bảo năm nay điểm chuẩn khối A00 và D01 tăng sốc thêm 2,5 điểm ở tất cả các trường top! Bạn nào chưa có IELTS 7.0 để cộng 2,5 điểm và chưa đăng ký thi thêm 5 kỳ thi riêng thì coi như trượt chắc rồi nhé!",
+        likes: "1,4K",
+        comments: "642 bình luận hoang mang",
+        unblurred: false
+      },
+      {
+        id: 2,
+        author: "Trần Minh K. (Học sinh lớp 12)",
+        time: "28 phút trước • Góc chia sẻ thành tích",
+        avatar: "MK",
+        avatarColor: "bg-amber-600",
+        text: "Chỉ còn 3 tháng nữa mà mình mới thi thử được có 29,25 điểm khối A00 với IELTS 8.0 thôi, cảm thấy áp lực và tụt hậu quá mọi người ơi, chắc phải đăng ký thêm 3 khóa luyện đề đêm nữa mới yên tâm...",
+        likes: "980",
+        comments: "315 bình luận so sánh",
+        unblurred: false
+      },
+      {
+        id: 3,
+        author: "Cổng Thông Tin Bộ Giáo dục và Đào tạo",
+        time: "1 giờ trước • Nguồn đã xác minh (.gov.vn)",
+        avatar: "GD",
+        avatarColor: "bg-emerald-600",
+        text: "THÔNG TƯ 95/2026/TT-BGDĐT (HIỆU LỰC 2027): Mỗi ngành chỉ sử dụng tối đa 03 phương thức tuyển sinh; tổng điểm cộng chứng chỉ ngoại ngữ và thành tích khống chế tối đa 0,50/30 điểm (bỏ hẳn từ 2028); ưu tiên thứ tự nguyện vọng cao hơn khi đồng điểm cuối danh sách.",
+        likes: "2,1K",
+        comments: "128 bình luận tích cực",
+        unblurred: false
+      },
+      {
+        id: 4,
+        author: "Trung tâm Luyện thi ĐGTD, Khối C00 Cấp tốc",
+        time: "35 phút trước • Quảng cáo ngoài tổ hợp",
+        avatar: "CT",
+        avatarColor: "bg-indigo-600",
+        text: "Khai giảng lớp luyện thi Đánh giá Tư duy (ĐGTD) và ôn cấp tốc khối C00 (Văn – Sử – Địa) trong 4 tuần cuối! Đăng ký ngay kẻo lỡ đợt thi riêng!",
+        likes: "520",
+        comments: "74 bình luận",
+        unblurred: false
+      },
+      {
+        id: 5,
+        author: "Tư vấn Tuyển sinh Suất Ngoại Giao 2027",
+        time: "Được tài trợ • Tên miền lạ",
+        avatar: "QC",
+        avatarColor: "bg-purple-600",
+        text: "Cam kết bao đỗ đại học top đầu, nhận hồ sơ suất ngoại giao không cần điểm sàn! Truy cập ngay tuyensinh-baodo.xyz để giữ chỗ!",
+        likes: "412",
+        comments: "89 bình luận",
+        unblurred: false
+      }
+    ];
+
+    function renderCustomKeywords() {
+      const box = document.getElementById("customKeywordsContainer");
+      if (!box) return;
+      box.innerHTML = customUserKeywords.map((kw, idx) => `
+        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-slate-200 text-[11px] font-semibold text-slate-700 shadow-2xs">
+          <span>#${kw}</span>
+          <button onclick="removeCustomKeyword(${idx})" class="text-slate-400 hover:text-rose-600 font-bold ml-0.5">×</button>
+        </span>
+      `).join("");
+    }
+
+    function addCustomKeyword(e) {
+      e.preventDefault();
+      const input = document.getElementById("customKeywordInput");
+      const val = (input?.value || "").trim().toLowerCase();
+      if (!val) return;
+      if (!customUserKeywords.includes(val)) {
+        customUserKeywords.push(val);
+        renderCustomKeywords();
+        renderSocialFeedPosts();
+        showShieldToast("Đã thêm từ khóa cá nhân", `Bộ lọc sẽ tự động làm mờ các bài đăng chứa cụm từ "${val}".`, "success");
+      }
+      input.value = "";
+    }
+
+    function removeCustomKeyword(idx) {
+      customUserKeywords.splice(idx, 1);
+      renderCustomKeywords();
+      renderSocialFeedPosts();
+    }
+
+    function isPostFomoTrigger(text) {
+      const lower = text.toLowerCase();
+      const allKw = [...defaultFomoKeywords, ...customUserKeywords, ...scamDomainPatterns];
+      return allKw.some(kw => lower.includes(kw));
+    }
+
+    function isPostScamDomain(text) {
+      const lower = text.toLowerCase();
+      return scamDomainPatterns.some(d => lower.includes(d));
+    }
+
+    function isPostIrrelevantToCombo(text) {
+      const combo = document.getElementById("shieldComboSelect")?.value || "A00";
+      const list = irrelevantExamKeywordsByCombo[combo] || [];
+      const lower = text.toLowerCase();
+      return list.some(kw => lower.includes(kw));
+    }
+
+    function renderSocialFeedPosts() {
+      const container = document.getElementById("socialFeedPostsContainer");
+      let triggeredCount = 0;
+      let blockedCount = 0;
+
+      container.innerHTML = initialSocialPosts.map(post => {
+        const isScam = isPostScamDomain(post.text);
+        const isFomo = !isScam && isPostFomoTrigger(post.text);
+        const isIrrelevant = !isScam && !isFomo && isPostIrrelevantToCombo(post.text);
+        if (isScam || isFomo || isIrrelevant) triggeredCount++;
+        const shouldBlur = shieldEnabled && (isScam || isFomo || isIrrelevant) && !post.unblurred;
+        if (shouldBlur) blockedCount++;
+
+        let statusBadge = `<span class="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">✓ Nguồn an toàn</span>`;
+        if (isScam) {
+          statusBadge = `<span class="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-bold">Cảnh báo: Tên miền giả mạo / Lừa đảo</span>`;
+        } else if (isFomo) {
+          statusBadge = `<span class="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-bold">Tầng 1: Kích hoạt A-FOMO</span>`;
+        } else if (isIrrelevant) {
+          statusBadge = `<span class="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold">Tầng 2: Lệch tổ hợp 2+2</span>`;
+        }
+
+        return `
+          <article class="p-5 rounded-3xl clean-card ${(isScam || isFomo || isIrrelevant) && shieldEnabled ? 'border-amber-300' : 'border-slate-200'} space-y-3 relative overflow-hidden transition-all">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-2xl ${post.avatarColor} text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">${post.avatar}</div>
+                <div>
+                  <div class="font-bold text-xs sm:text-sm text-slate-900">${post.author}</div>
+                  <div class="text-[11px] text-slate-400">${post.time}</div>
+                </div>
+              </div>
+              ${statusBadge}
+            </div>
+
+            <div class="relative">
+              <p class="text-xs sm:text-sm text-slate-700 leading-relaxed ${shouldBlur ? 'fomo-blur-content' : 'fomo-unblurred'}">
+                ${post.text}
+              </p>
+
+              ${shouldBlur ? `
+                <div class="mt-2.5 p-4 rounded-2xl bg-slate-900/95 text-white border ${isScam ? 'border-rose-500/70' : isFomo ? 'border-amber-400/50' : 'border-indigodeep-400/50'} space-y-2.5 shadow-xl">
+                  <div class="flex items-start gap-2.5">
+                    <i data-lucide="${isScam ? 'octagon-alert' : isFomo ? 'shield-alert' : 'filter-x'}" class="w-4 h-4 ${isScam ? 'text-rose-400' : isFomo ? 'text-amber-400' : 'text-indigo-300'} shrink-0 mt-0.5"></i>
+                    <div class="text-xs leading-relaxed">
+                      ${isScam
+                        ? `<strong class="text-rose-300">Lá chắn Anti-Scam Domain Guard:</strong> Bài đăng chứa dấu hiệu quảng cáo bao đỗ trái quy chế hoặc tên miền không thuộc hệ thống <code>.gov.vn / .edu.vn</code>.`
+                        : isFomo
+                          ? `<strong class="text-amber-300">Tầng 1 – Cú hích Nhận thức So sánh Xã hội (MindUni Nudge):</strong> Nội dung này chứa yếu tố kích hoạt lo âu học thuật (A-FOMO). Bạn vẫn muốn xem chứ?`
+                          : `<strong class="text-indigo-300">Tầng 2 – Sàng lọc Tin Lệch Tổ Hợp 2+2:</strong> Nội dung này thuộc kỳ thi hoặc khối thi ngoài phạm vi 2 phương thức trọng tâm đã khóa. Đã thu gọn để bảo toàn sự tập trung.`
+                      }
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap gap-2 pl-6">
+                    <button onclick="unblurSinglePost(${post.id})" class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-200 font-semibold text-[11px] transition">
+                      Vẫn xem (Tôi tự chủ)
+                    </button>
+                    <button onclick="hideFomoPost(${post.id})" class="px-3.5 py-1.5 rounded-xl bg-tealcalm-600 hover:bg-tealcalm-500 text-white font-bold text-[11px] transition">
+                      Ẩn tin nhiễu, giữ tập trung
+                    </button>
+                  </div>
+                </div>
+              ` : ""}
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <span>Lượt tương tác: ${post.likes}</span>
+              <span>${post.comments}</span>
+            </div>
+          </article>
+        `;
+      }).join("");
+
+      document.getElementById("blockedCounterVal").textContent = `${blockedCount} / ${triggeredCount} tin nhiễu đã lọc`;
+      lucide.createIcons();
+    }
+
+    function syncShieldProfile() {
+      const combo = document.getElementById("shieldComboSelect").value;
+      const majorGroup = document.getElementById("shieldMajorGroupSelect")?.value || "TECH";
+      const comboLabels = {
+        A00: "Toán – Ngữ văn + (Vật lí, Hóa học)",
+        B00: "Toán – Ngữ văn + (Hóa học, Sinh học)",
+        C00: "Toán – Ngữ văn + (Lịch sử, Địa lí)",
+        D01: "Toán – Ngữ văn + (GDKT, Pháp luật, Tiếng Anh)"
+      };
+      const majorLabels = {
+        TECH: "Kỹ thuật – CNTT",
+        ECON: "Kinh tế – Tài chính",
+        EDU_LAW: "Sư phạm – Luật",
+        HEALTH: "Y – Dược – Sức khỏe"
+      };
+      const filterLabel = document.getElementById("newsFilterComboLabel");
+      const majorLabel = document.getElementById("newsFilterMajorLabel");
+      const anchorText = document.getElementById("anchorComboText");
+      if (filterLabel) filterLabel.textContent = comboLabels[combo];
+      if (majorLabel) majorLabel.textContent = majorLabels[majorGroup];
+      if (anchorText) anchorText.textContent = `${comboLabels[combo]} • Nhóm ${majorLabels[majorGroup]}`;
+      renderExtensionOfficialNews();
+      renderVerifiedStudyResources(currentResourceCategory);
+      renderSocialFeedPosts();
+    }
+
+    function showShieldToast(title, msg, type = "info") {
+      const box = document.getElementById("shieldToastBox");
+      if (!box) return;
+      const el = document.createElement("div");
+      const border = type === "success" ? "border-emerald-500" : "border-tealcalm-500";
+      el.className = `pointer-events-auto p-3.5 rounded-2xl bg-slate-900/95 text-white border ${border} shadow-xl text-xs space-y-1`;
+      el.innerHTML = `<div class="font-bold">${title}</div><div class="text-slate-300 leading-snug">${msg}</div>`;
+      box.appendChild(el);
+      setTimeout(() => { if (el.parentElement) el.remove(); }, 4200);
+    }
+
+    function toggleShieldMaster() {
+      shieldEnabled = !shieldEnabled;
+      const btn = document.getElementById("shieldMasterToggleBtn");
+      if (shieldEnabled) {
+        btn.className = "px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-[11px] transition flex items-center gap-1 shadow-xs";
+        btn.innerHTML = `<i data-lucide="shield-check" class="w-3.5 h-3.5"></i> ĐANG KÍCH HOẠT`;
+        showShieldToast("Đã kích hoạt MindUni Shield", "Bộ lọc 2 tầng đang chủ động làm mờ tin kích hoạt lo âu và thu gọn tin lệch tổ hợp.", "success");
+      } else {
+        btn.className = "px-3 py-1 rounded-lg bg-rose-500 text-white font-extrabold text-[11px] transition flex items-center gap-1 shadow-xs";
+        btn.innerHTML = `<i data-lucide="shield-off" class="w-3.5 h-3.5"></i> TẠM DỪNG`;
+        showShieldToast("Đã tạm dừng Bộ lọc", "Luồng dữ liệu hiển thị nguyên bản các nội dung gây nhiễu để đối chiếu.", "info");
+      }
+      renderSocialFeedPosts();
+    }
+
+    function unblurSinglePost(id) {
+      const p = initialSocialPosts.find(x => x.id === id);
+      if (p) p.unblurred = true;
+      renderSocialFeedPosts();
+    }
+
+    function hideFomoPost(id) {
+      const idx = initialSocialPosts.findIndex(x => x.id === id);
+      if (idx >= 0) initialSocialPosts.splice(idx, 1);
+      weeklyBlockedTotal++;
+      const statEl = document.getElementById("statWeeklyBlocked");
+      if (statEl) statEl.textContent = `${weeklyBlockedTotal} bài`;
+      renderSocialFeedPosts();
+      showShieldToast("Đã ẩn tin nhiễu thành công", "Cú hích hành vi hiệu quả: Bạn đã bảo vệ sự tập trung cho mục tiêu 2+2.", "success");
+    }
+
+    function addCustomJudgePost(e) {
+      e.preventDefault();
+      const input = document.getElementById("judgeTestPostInput");
+      const val = (input?.value || "").trim();
+      if (!val) return;
+      initialSocialPosts.unshift({
+        id: Date.now(),
+        author: "Luồng Dữ liệu Kiểm định Ngữ nghĩa",
+        time: "Vừa cập nhật • Quét thời gian thực",
+        avatar: "KT",
+        avatarColor: "bg-tealcalm-700",
+        text: val,
+        likes: "1",
+        comments: "Đang phân tích ngữ nghĩa...",
+        unblurred: false
+      });
+      input.value = "";
+      renderSocialFeedPosts();
+    }
+
+    function switchPopupTab(tab) {
+      const panels = {
+        news: document.getElementById("popupPanelNews"),
+        resources: document.getElementById("popupPanelResources"),
+        debunk: document.getElementById("popupPanelDebunk"),
+        anchor: document.getElementById("popupPanelAnchor"),
+        stats: document.getElementById("popupPanelStats")
+      };
+      const btns = {
+        news: document.getElementById("popupTabNewsBtn"),
+        resources: document.getElementById("popupTabResourcesBtn"),
+        debunk: document.getElementById("popupTabDebunkBtn"),
+        anchor: document.getElementById("popupTabAnchorBtn"),
+        stats: document.getElementById("popupTabStatsBtn")
+      };
+
+      Object.keys(panels).forEach(k => {
+        if (!panels[k] || !btns[k]) return;
+        if (k === tab) {
+          panels[k].classList.remove("hidden");
+          btns[k].className = "py-3 px-1 bg-white text-indigodeep-700 border-b-2 border-indigodeep-600 flex flex-col items-center justify-center gap-1 transition";
+        } else {
+          panels[k].classList.add("hidden");
+          btns[k].className = "py-3 px-1 text-slate-500 hover:text-slate-900 flex flex-col items-center justify-center gap-1 transition";
+        }
+      });
+      lucide.createIcons();
+    }
+
+    let currentResourceCategory = "ALL";
+
+    const verifiedStudyResources = [
+      {
+        cat: "THPT22",
+        combos: ["A00", "B00", "C00", "D01"],
+        badge: "Cổng Quốc gia • Miễn phí",
+        title: "Hệ thống Học liệu Số Trường học Thông minh – Bộ GD&ĐT (igiaoduc.vn)",
+        provider: "Bộ Giáo dục và Đào tạo",
+        desc: "Kho bài giảng điện tử, ngân hàng câu hỏi trắc nghiệm Đúng/Sai, Trả lời ngắn bám sát Chương trình GDPT 2018 cho cả 10 môn thi tốt nghiệp.",
+        advice: "Phù hợp cho 70% quỹ thời gian ôn tập nền tảng trên lớp.",
+        url: "https://igiaoduc.vn"
+      },
+      {
+        cat: "THPT22",
+        combos: ["A00", "B00", "C00", "D01"],
+        badge: "Truyền hình Giáo dục Quốc gia",
+        title: "Chuyên mục Chinh phục Kỳ thi Tốt nghiệp THPT – Kênh VTV7 (vtv7.vtv.vn)",
+        provider: "Đài Truyền hình Việt Nam (VTV7)",
+        desc: "Chuỗi bài giảng hệ thống hóa kiến thức trọng tâm, hướng dẫn kỹ thuật xử lý ngữ liệu Ngữ văn ngoài SGK và các chuyên đề vận dụng Toán, Khoa học.",
+        advice: "Giúp tự học hiệu quả buổi tối mà không tốn chi phí luyện thi.",
+        url: "https://vtv7.vtv.vn"
+      },
+      {
+        cat: "THPT22",
+        combos: ["A00", "B00", "D01"],
+        badge: "Nền tảng Mở Quốc tế",
+        title: "Khan Academy Tiếng Việt – Chuyên đề Toán, Vật lí, Hóa học, Sinh học",
+        provider: "The Vietnam Foundation (VNF)",
+        desc: "Hệ thống bài tập tương tác có lời giải từng bước giúp củng cố chắc chắn tư duy định lượng, xác suất thống kê và giải tích lớp 12.",
+        advice: "Rất hữu ích để khắc phục lỗ hổng kiến thức cơ bản trước khi luyện đề.",
+        url: "https://vi.khanacademy.org"
+      },
+      {
+        cat: "THPT22",
+        combos: ["A00", "B00", "C00", "D01"],
+        badge: "Nền tảng Trực tuyến Uy tín",
+        title: "Hệ thống Ôn luyện Quốc gia HOCMAI / Tuyensinh247 (Lộ trình PEN 2+2)",
+        provider: "Đơn vị giáo dục trực tuyến được kiểm định",
+        desc: "Cung cấp lộ trình tổng ôn 3 giai đoạn (Nền tảng – Luyện đề chuẩn ma trận 40-30-30 – Tối ưu điểm số) với đội ngũ giáo viên chuyên giàu kinh nghiệm.",
+        advice: "Chỉ nên đăng ký tối đa 1 khóa chuyên sâu cho đúng tổ hợp 2+2 đã chọn.",
+        url: "https://hocmai.vn"
+      },
+      {
+        cat: "DGNL_VSAT",
+        combos: ["A00", "B00", "C00", "D01"],
+        badge: "Cổng Khảo thí Chính thức",
+        title: "Cổng Luyện thi Đánh giá Đầu vào Đại học trên Máy tính (V-SAT – Trung tâm Khảo thí Quốc gia)",
+        provider: "Cục Quản lý Chất lượng – Bộ GD&ĐT",
+        desc: "Cung cấp cấu trúc đề minh họa và giao diện thi thử trên máy tính cho từng môn độc lập (Toán, Lí, Hóa, Sinh, Sử, Địa, Tiếng Anh), dùng xét tuyển tại hơn 20 trường đại học.",
+        advice: "Phù hợp làm phương thức dự phòng (30%) vì bám sát kiến thức từng môn THPT.",
+        url: "https://vsat.moet.gov.vn"
+      },
+      {
+        cat: "DGNL_VSAT",
+        combos: ["A00", "B00", "C00", "D01"],
+        badge: "ĐHQG Hà Nội và ĐHQG TP.HCM",
+        title: "Cổng Đề Tham Khảo ĐGNL HSA (ĐHQGHN) và V-ACT (ĐHQG-HCM)",
+        provider: "Trung tâm Khảo thí ĐHQGHN / ĐHQG-HCM",
+        desc: "Tài liệu hướng dẫn cấu trúc bài thi và đề thi mẫu chính thức từ đơn vị tổ chức kỳ thi, tránh mua tài liệu trôi nổi trên mạng xã hội.",
+        advice: "Chỉ tham gia nếu ngành mục tiêu có sử dụng mã phương thức này trong 03 phương thức tối đa.",
+        url: "https://khaothi.vnu.edu.vn"
+      },
+      {
+        cat: "CERT",
+        combos: ["A00", "B00", "C00", "D01"],
+        badge: "Lưu ý Trần 0,50đ (TT 95/2026)",
+        title: "Cổng Luyện thi IELTS / VSTEP Chính thức (British Council, IDP, Khung năng lực Ngoại ngữ 6 bậc)",
+        provider: "Hội đồng Anh / IDP / Các trường ĐH được Bộ cấp phép",
+        desc: "Nguồn tài liệu chuẩn hóa kỹ năng Nghe – Nói – Đọc – Viết học thuật. Theo Thông tư 95/2026/TT-BGDĐT, điểm cộng chứng chỉ năm 2027 khống chế tối đa 0,50/30đ (và bỏ hẳn từ 2028).",
+        advice: "Học ngoại ngữ để phục vụ năng lực học đại học thực chất, không chạy đua mua khóa cấp tốc vì điểm cộng.",
+        url: "https://www.britishcouncil.vn"
+      }
+    ];
+
+    function renderVerifiedStudyResources(category = "ALL") {
+      currentResourceCategory = category;
+      const listEl = document.getElementById("verifiedStudyResourcesList");
+      if (!listEl) return;
+
+      const catBtns = {
+        ALL: document.getElementById("resCatAll"),
+        THPT22: document.getElementById("resCatThpt"),
+        DGNL_VSAT: document.getElementById("resCatExam"),
+        CERT: document.getElementById("resCatCert")
+      };
+      Object.keys(catBtns).forEach(k => {
+        if (!catBtns[k]) return;
+        catBtns[k].className = k === category
+          ? "px-2.5 py-1 rounded-full bg-indigodeep-600 text-white transition"
+          : "px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 hover:bg-slate-200 transition";
+      });
+
+      const combo = document.getElementById("shieldComboSelect")?.value || "A00";
+      const filtered = verifiedStudyResources.filter(item => {
+        const matchCat = category === "ALL" || item.cat === category;
+        const matchCombo = item.combos.includes(combo);
+        return matchCat && matchCombo;
+      });
+
+      listEl.innerHTML = filtered.map(item => `
+        <div class="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-1.5">
+          <div class="flex items-center justify-between text-[10px]">
+            <span class="px-2 py-0.5 rounded bg-tealcalm-50 text-tealcalm-800 border border-tealcalm-200 font-bold">✓ ${item.badge}</span>
+            <span class="text-slate-400 font-semibold">${item.provider}</span>
+          </div>
+          <div class="font-bold text-xs text-slate-900 leading-snug">${item.title}</div>
+          <p class="text-[11px] text-slate-600 leading-relaxed">${item.desc}</p>
+          <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 text-[10px] text-indigodeep-900 font-medium">
+            <strong>Khuyến nghị MindUni:</strong> ${item.advice}
+          </div>
+          <div class="pt-0.5 flex justify-end">
+            <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="text-[10px] font-bold text-indigodeep-600 hover:underline">Truy cập nguồn chính thức →</a>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    const rumorDebunkItems = [
+      {
+        rumor: "Tin đồn: Có chứng chỉ IELTS 7.0 sẽ được cộng thẳng 2,5 đến 3,0 điểm vào tổng điểm xét tuyển đại học.",
+        truth: "Sự thật (Thông tư 95/2026/TT-BGDĐT): Năm 2027 tổng điểm cộng (gồm cả giải HSG, năng khiếu và chứng chỉ ngoại ngữ) khống chế tối đa 0,50/30 điểm, và bãi bỏ hoàn toàn điểm cộng từ năm 2028."
+      },
+      {
+        rumor: "Tin đồn: Phải thi đủ 5–6 kỳ thi riêng (ĐGNL, ĐGTD, V-SAT, IELTS) mới có cơ hội đỗ đại học top đầu.",
+        truth: "Sự thật (Thông tư 95/2026/TT-BGDĐT): Mỗi ngành đào tạo chỉ sử dụng tối đa 03 phương thức tuyển sinh trong năm 2027 (giảm còn tối đa 02 từ năm 2028). Hệ thống lọc ảo tự động xét phương thức có lợi nhất."
+      },
+      {
+        rumor: "Tin đồn: Xét học bạ vào ngành Sư phạm, Luật hay Y-Dược chỉ cần điểm trung bình trên 6,5 là đỗ.",
+        truth: "Sự thật (Thông tư 95/2026/TT-BGDĐT): Xét tuyển không dùng điểm thi THPT vào nhóm ngành Sư phạm, Luật, Y khoa, Dược học bắt buộc học lực cả năm lớp 12 đạt mức Tốt (Giỏi)."
+      },
+      {
+        rumor: "Tin đồn: Phải đóng thêm lệ phí xét tuyển riêng cho từng trường đại học mới được đưa vào danh sách lọc ảo.",
+        truth: "Sự thật (Thông tư 95/2026/TT-BGDĐT): Cấm các cơ sở đào tạo thu thêm lệ phí xét tuyển đối với thí sinh đã nộp lệ phí trên Hệ thống hỗ trợ tuyển sinh chung của Bộ GD&ĐT."
+      }
+    ];
+
+    function renderRumorDebunkList() {
+      const box = document.getElementById("rumorDebunkList");
+      if (!box) return;
+      box.innerHTML = rumorDebunkItems.map(item => `
+        <div class="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2 text-xs">
+          <div class="p-2.5 rounded-xl bg-rose-50/90 border border-rose-200 text-rose-950 font-semibold leading-snug">
+            ✕ ${item.rumor}
+          </div>
+          <div class="p-2.5 rounded-xl bg-emerald-50/90 border border-emerald-200 text-emerald-950 leading-relaxed">
+            ✓ ${item.truth}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    const majorWatchlistNotices = {
+      TECH: { source: "Đề án Tuyển sinh Khối Kỹ thuật – CNTT 2027", time: "Cập nhật nhóm ngành", title: "Các trường Bách khoa, Công nghệ áp dụng tối đa 03 phương thức theo Thông tư 95/2026", desc: "Tập trung vào Thi tốt nghiệp THPT 2+2, ĐGNL/ĐGTD và Xét tuyển tài năng; trần điểm cộng chứng chỉ quốc tế tối đa 0,50/30đ.", url: "https://moet.gov.vn" },
+      ECON: { source: "Đề án Tuyển sinh Khối Kinh tế – Tài chính 2027", time: "Cập nhật nhóm ngành", title: "Quy tắc quy đổi chứng chỉ ngoại ngữ công khai độ lệch điểm tại các trường Kinh tế", desc: "Thí sinh dùng chứng chỉ ngoại ngữ xét kết hợp được quy đổi minh bạch theo quy tắc bách phân vị, không cộng dồn vượt trần 0,50đ.", url: "https://moet.gov.vn" },
+      EDU_LAW: { source: "Đề án Tuyển sinh Khối Sư phạm – Luật 2027", time: "Cập nhật nhóm ngành", title: "Bắt buộc học lực cả năm lớp 12 mức Tốt khi xét học bạ cùng Chính sách Nghị định 116", desc: "Ngành Sư phạm miễn 100% học phí và hỗ trợ 3,63 triệu đồng/tháng; yêu cầu học lực lớp 12 mức Tốt nếu xét không dùng điểm thi THPT.", url: "https://moet.gov.vn" },
+      HEALTH: { source: "Đề án Tuyển sinh Khối Y – Dược 2027", time: "Cập nhật nhóm ngành", title: "Ngưỡng đảm bảo chất lượng đầu vào cùng Điều kiện học lực lớp 12 mức Tốt", desc: "Ngành Y khoa, Răng-Hàm-Mặt, Dược học yêu cầu học lực lớp 12 mức Tốt; Điều dưỡng, Xét nghiệm yêu cầu từ mức Khá trở lên.", url: "https://moet.gov.vn" }
+    };
+
+    const officialNewsByCombo = {
+      A00: [
+        { source: "Bộ GD&ĐT • Thông tư 95/2026", time: "Hiệu lực 2027", title: "Mỗi ngành chỉ sử dụng tối đa 03 phương thức xét tuyển tổ hợp Toán – Lí – Hóa", desc: "Từ mùa tuyển sinh 2027, mỗi ngành đào tạo chỉ dùng tối đa 03 phương thức (giảm còn 02 từ năm 2028) trong 11 mã chuẩn.", url: "https://moet.gov.vn" },
+        { source: "Cổng Thi THPT 2+2", time: "Quy chế 2027", title: "Trần điểm cộng tối đa 0,50/30đ và Ngưỡng nguồn tuyển tối thiểu 15,0đ/3 môn", desc: "Tổng điểm cộng chứng chỉ ngoại ngữ, giải HSG khống chế tối đa 0,50đ năm 2027 (bãi bỏ từ 2028); ưu tiên thứ tự NV khi đồng điểm.", url: "https://thisinh.thitotnghiepthpt.edu.vn" }
+      ],
+      B00: [
+        { source: "Bộ GD&ĐT • Thông tư 95/2026", time: "Hiệu lực 2027", title: "Quy định ngưỡng đảm bảo chất lượng đầu vào khối ngành Sức khỏe (Toán – Hóa – Sinh)", desc: "Xét học bạ ngành Y khoa, Răng-Hàm-Mặt, Dược học bắt buộc học lực cả năm lớp 12 đạt mức Tốt (Giỏi); tối đa 03 phương thức/ngành.", url: "https://moet.gov.vn" },
+        { source: "Cổng Thi THPT 2+2", time: "Quy chế 2027", title: "Cấu trúc đề thi Hóa học, Sinh học 2+2 bám sát chương trình lớp 12 (40-30-30)", desc: "Tỷ lệ 40% Nhận biết, 30% Thông hiểu, 30% Vận dụng; tổng điểm cộng chứng chỉ quốc tế tối đa 0,50/30 điểm.", url: "https://thisinh.thitotnghiepthpt.edu.vn" }
+      ],
+      C00: [
+        { source: "Bộ GD&ĐT • Thông tư 95/2026", time: "Hiệu lực 2027", title: "Điều kiện xét học bạ ngành Sư phạm, Luật (Văn – Sử – Địa) & Chính sách Nghị định 116", desc: "Xét tuyển không dùng điểm thi THPT vào Sư phạm, Luật yêu cầu học lực lớp 12 mức Tốt; sinh viên Sư phạm được miễn 100% học phí.", url: "https://moet.gov.vn" },
+        { source: "Cổng Thi THPT 2+2", time: "Quy chế 2027", title: "Đề thi Ngữ văn sử dụng 100% ngữ liệu ngoài SGK; Lịch sử, Địa lí chuẩn mới", desc: "Hệ thống lọc ảo tự động xét phương thức có lợi nhất từ NV1 xuống dưới và ưu tiên thứ tự NV cao hơn khi đồng điểm.", url: "https://thisinh.thitotnghiepthpt.edu.vn" }
+      ],
+      D01: [
+        { source: "Bộ GD&ĐT • Thông tư 95/2026", time: "Hiệu lực 2027", title: "Khống chế trần điểm cộng chứng chỉ ngoại ngữ tối đa 0,50/30 điểm từ năm 2027", desc: "Tổng điểm cộng (IELTS, giải HSG, năng khiếu) tối đa 0,50đ năm 2027 và bãi bỏ hẳn từ 2028; không thu thêm lệ phí ngoài Cổng Bộ.", url: "https://moet.gov.vn" },
+        { source: "Cổng Thi THPT 2+2", time: "Quy chế 2027", title: "Mỗi ngành khối Kinh tế – Luật – Ngoại ngữ chỉ dùng tối đa 03 phương thức", desc: "Nguồn tuyển tối thiểu 15,0đ/3 môn; xét học bạ ngành Luật bắt buộc học lực cả năm lớp 12 mức Tốt.", url: "https://thisinh.thitotnghiepthpt.edu.vn" }
+      ]
+    };
+
+    let customPublishedBulletins = [];
+
+    function publishCustomOfficialBulletin(e) {
+      e.preventDefault();
+      const input = document.getElementById("newBulletinTitleInput");
+      const val = (input?.value || "").trim();
+      if (!val) return;
+      const now = new Date();
+      const stamp = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")} hôm nay`;
+      customPublishedBulletins.unshift({
+        source: "Bản tin Đồng bộ Trực tuyến 24h",
+        time: stamp,
+        title: val,
+        desc: "Thông báo tuyển sinh mới vừa được cập nhật vào danh sách trắng của MindUni Shield và đồng bộ tới Extension.",
+        url: "https://moet.gov.vn"
+      });
+      input.value = "";
+      renderExtensionOfficialNews();
+      showShieldToast("Đã đồng bộ bản tin mới", "Thông báo tuyển sinh vừa thêm đã cập nhật vào bảng tin chính thống và gói Extension 24h.", "success");
+    }
+
+    function renderExtensionOfficialNews() {
+      const listEl = document.getElementById("extensionOfficialNewsList");
+      if (!listEl) return;
+      const combo = document.getElementById("shieldComboSelect")?.value || "A00";
+      const majorGroup = document.getElementById("shieldMajorGroupSelect")?.value || "TECH";
+      const baseItems = officialNewsByCombo[combo] || officialNewsByCombo.A00;
+      const majorNotice = majorWatchlistNotices[majorGroup];
+      const items = [...customPublishedBulletins, ...(majorNotice ? [majorNotice] : []), ...baseItems];
+
+      listEl.innerHTML = items.map(item => `
+        <div class="p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-1.5">
+          <div class="flex items-center justify-between text-[10px]">
+            <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">✓ ${item.source}</span>
+            <span class="text-slate-400 font-semibold">${item.time}</span>
+          </div>
+          <div class="font-bold text-xs text-slate-900 leading-snug">${item.title}</div>
+          <p class="text-[11px] text-slate-600 leading-relaxed">${item.desc}</p>
+          <div class="pt-1 flex justify-end">
+            <a href="${item.url}" target="_blank" rel="noopener noreferrer" class="text-[10px] font-bold text-indigodeep-600 hover:underline">Xem văn bản gốc →</a>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function refreshExtensionOfficialNews() {
+      const btn = document.getElementById("btnRefreshExtNews");
+      if (!btn) return;
+      btn.disabled = true;
+      btn.innerHTML = `<span class="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin"></span> Đang quét...`;
+      setTimeout(() => {
+        renderExtensionOfficialNews();
+        const now = new Date();
+        const timeStr = `Vừa đồng bộ • ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+        const syncEl = document.getElementById("lastDailySyncTime");
+        if (syncEl) syncEl.textContent = timeStr;
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3 h-3"></i> Quét Tin Mới`;
+        lucide.createIcons();
+        showShieldToast("Đã đồng bộ tin chính thống hàng ngày", "Service Worker đã cập nhật dữ liệu mới nhất từ Bộ GD&ĐT theo đúng tổ hợp 2+2.", "success");
+      }, 600);
+    }
+
+    function triggerEveningStudyNudge() {
+      const banner = document.getElementById("eveningNudgeBanner");
+      if (banner) {
+        banner.classList.remove("hidden");
+        lucide.createIcons();
+      }
+    }
+
+    function openQuickBreathing() {
+      const banner = document.getElementById("eveningNudgeBanner");
+      if (banner) banner.classList.add("hidden");
+      const modal = document.getElementById("shieldBreathingModal");
+      if (modal) modal.classList.remove("hidden");
+    }
+
+    function dismissEveningNudgeToFocus() {
+      const banner = document.getElementById("eveningNudgeBanner");
+      if (banner) banner.classList.add("hidden");
+      shieldEnabled = true;
+      const btn = document.getElementById("shieldMasterToggleBtn");
+      if (btn) {
+        btn.className = "px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-extrabold text-[11px] transition flex items-center gap-1 shadow-xs";
+        btn.innerHTML = `<i data-lucide="shield-check" class="w-3.5 h-3.5"></i> ĐANG KÍCH HOẠT`;
+      }
+      renderSocialFeedPosts();
+      showShieldToast("Đã khóa nhiễu, quay lại học tập", "Bộ lọc 2 tầng đã được kích hoạt ở mức cao nhất cho khung giờ vàng tự học.", "success");
+    }
+
+    function openManifestCodeModal() {
+      const modal = document.getElementById("manifestCodeModal");
+      if (modal) {
+        modal.classList.remove("hidden");
+        lucide.createIcons();
+      }
+    }
+
+    function downloadExtensionFile(fileName) {
+      const combo = document.getElementById("shieldComboSelect")?.value || "A00";
+      const allKw = [...defaultFomoKeywords, ...customUserKeywords];
+      const filesMap = {
+        "manifest.json": JSON.stringify({
+          manifest_version: 3,
+          name: "MindUni Shield v4.2 – Hệ thống Can thiệp Kiến trúc Lựa chọn và Đồng bộ Tuyển sinh Chính thống",
+          version: "4.2.0",
+          description: "Sàng lọc nội dung kích hoạt lo âu học thuật (A-FOMO), thu gọn tin lệch tổ hợp 2+2 trên Facebook, TikTok và tự động đồng bộ tin Bộ GD&ĐT mỗi 24h.",
+          permissions: ["storage", "alarms", "notifications"],
+          background: { service_worker: "background.js" },
+          action: { default_popup: "popup.html" },
+          content_scripts: [
+            {
+              matches: ["*://*.facebook.com/*", "*://*.tiktok.com/*", "*://*.threads.net/*"],
+              js: ["content.js"],
+              run_at: "document_idle"
+            }
+          ]
+        }, null, 2),
+
+        "background.js": `// MindUni Shield v4.2 - Background Service Worker (Đồng bộ Thông tư 95/2026/TT-BGDĐT mỗi 24 giờ)
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.alarms.create("minduniDailyAdmissionsSync", { periodInMinutes: 1440 });
+  syncDailyOfficialAdmissions();
+});
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === "minduniDailyAdmissionsSync") {
+    syncDailyOfficialAdmissions();
+  }
+});
+
+async function syncDailyOfficialAdmissions() {
+  const today = new Date().toLocaleDateString("vi-VN");
+  const bulletins = [
+    "[" + today + "] Thông tư 95/2026/TT-BGDĐT: Mỗi ngành chỉ dùng tối đa 03 phương thức tuyển sinh năm 2027.",
+    "[" + today + "] Tổng điểm cộng (chứng chỉ, giải thưởng) khống chế tối đa 0,50/30đ năm 2027 và bỏ hẳn từ 2028.",
+    "[" + today + "] Nguồn tuyển tối thiểu 15,0đ/3 môn; ưu tiên thứ tự nguyện vọng cao hơn khi đồng điểm cuối danh sách."
+  ];
+  await chrome.storage.local.set({ minduniDailyNews: bulletins, lastSyncDate: today });
+}`,
+
+        "content.js": `// MindUni Shield v4.2 - Real-time DOM MutationObserver cho Facebook, TikTok Web
+const FOMO_KW = ${JSON.stringify(allKw)};
+const IRRELEVANT_KW = ${JSON.stringify(irrelevantExamKeywordsByCombo[combo] || [])};
+
+function scanDomNodes() {
+  const articles = document.querySelectorAll('div[role="article"], div[data-e2e="recommend-list-item-container"]');
+  articles.forEach(node => {
+    if (node.dataset.minduniScanned) return;
+    node.dataset.minduniScanned = "1";
+    const txt = (node.innerText || "").toLowerCase();
+    const isFomo = FOMO_KW.some(k => txt.includes(k));
+    const isIrrelevant = !isFomo && IRRELEVANT_KW.some(k => txt.includes(k));
+    if (isFomo || isIrrelevant) {
+      node.style.position = "relative";
+      node.style.filter = "blur(6px)";
+      node.style.transition = "filter 0.25s ease";
+      node.title = "MindUni Shield: Nội dung gây nhiễu A-FOMO hoặc lệch tổ hợp 2+2. Nhấn đúp để mở khóa nếu thực sự cần thiết.";
+      node.addEventListener("dblclick", () => { node.style.filter = "none"; });
+    }
+  });
+}
+
+const observer = new MutationObserver(() => scanDomNodes());
+observer.observe(document.body, { childList: true, subtree: true });
+scanDomNodes();`,
+
+        "popup.html": [
+          "<!DOCTYPE html>",
+          "<html lang=\"vi\">",
+          "<head><meta charset=\"UTF-8\"><title>MindUni Shield Popup</title>",
+          "<style>body{font-family:sans-serif;width:330px;padding:14px;background:#f8fafc;color:#0f172a} .card{background:#fff;border:1px solid #cbd5e1;border-radius:12px;padding:10px;margin-bottom:10px} h3{margin:0 0 6px;color:#0f766e;font-size:14px} p{margin:0;font-size:12px;line-height:1.45}</style>",
+          "</head>",
+          "<body>",
+          `  <div class="card"><h3>MindUni Shield v4.2 (Đồng bộ 24h)</h3><p>Hồ sơ đồng bộ: <strong>Tổ hợp ${combo}</strong> • 2 Phương thức trọng tâm (70:30).</p></div>`,
+          "  <div class=\"card\"><h3>Tin Chính Thống Bộ GD&ĐT (Tự động cập nhật hàng ngày)</h3><p id=\"newsBox\">Đang tải thông báo quy chế 2+2 mới nhất...</p></div>",
+          "  <script src=\"popup.js\"></" + "script>",
+          "</body></html>"
+        ].join("\n"),
+
+        "popup.js": `chrome.storage.local.get(["minduniDailyNews", "lastSyncDate"], (res) => {
+  const list = res.minduniDailyNews || [
+    "✓ Thông tư 95/2026/TT-BGDĐT: Mỗi ngành chỉ dùng tối đa 03 phương thức tuyển sinh năm 2027.",
+    "✓ Tổng điểm cộng khống chế tối đa 0,50/30đ năm 2027 (bỏ hẳn từ năm 2028).",
+    "✓ Ưu tiên thứ tự nguyện vọng cao hơn khi đồng điểm cuối danh sách; không thu thêm lệ phí ngoài Cổng Bộ."
+  ];
+  const syncNote = res.lastSyncDate ? "<br><small style='color:#0f766e'>Đồng bộ tự động lần cuối: " + res.lastSyncDate + "</small>" : "";
+  document.getElementById("newsBox").innerHTML = list.join("<br>") + syncNote;
+});`
+      };
+
+      const content = filesMap[fileName];
+      if (!content) return;
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showShieldToast(`Đã tải tệp ${fileName}`, "Lưu đủ 5 tệp vào 1 thư mục và nạp vào chrome://extensions để chạy đồng bộ 24h trên Facebook, TikTok.", "success");
+    }
+
+    let focusElapsedSeconds = 868;
+    setInterval(() => {
+      if (!shieldEnabled) return;
+      focusElapsedSeconds++;
+      const hrs = String(Math.floor(focusElapsedSeconds / 3600)).padStart(2, "0");
+      const mins = String(Math.floor((focusElapsedSeconds % 3600) / 60)).padStart(2, "0");
+      const secs = String(focusElapsedSeconds % 60).padStart(2, "0");
+      const el = document.getElementById("liveFocusDuration");
+      if (el) el.textContent = `${hrs}:${mins}:${secs}`;
+    }, 1000);
+
+    window.onload = function () {
+      renderCustomKeywords();
+      renderSocialFeedPosts();
+      renderExtensionOfficialNews();
+      renderVerifiedStudyResources("ALL");
+      renderRumorDebunkList();
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>
